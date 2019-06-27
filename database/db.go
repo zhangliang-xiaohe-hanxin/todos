@@ -14,3 +14,4 @@ func GetSession(c context.Context) (*sql.DB, error) {
 	}
 	return session, nil
 }
+
