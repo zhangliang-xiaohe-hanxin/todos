@@ -16,6 +16,7 @@ type APIMethod interface {
 	GetStore(c *gin.Context)
 	GetStoreByID(c *gin.Context)
 	UpdateStoreByID(c *gin.Context)
+	DeleteStoreByID(c *gin.Context)
 }
 
 type Todo struct {
@@ -40,8 +41,31 @@ func main() {
 	api.GET("/todos/:id", apiMethod.GetStoreByID)
 	api.POST("/todos", apiMethod.Insert)
 	api.PUT("/todos/:id", apiMethod.UpdateStoreByID)
+	api.DELETE("/todos/:id", apiMethod.DeleteStoreByID)
 
 	r.Run(fmt.Sprintf(":%s", port))
+}
+
+func (t Todo) DeleteStoreByID(c *gin.Context) {
+	param := c.Param("id")
+	num, err := strconv.Atoi(param)
+
+	db, err := sql.Open("postgres", hostName)
+	if err != nil {
+		log.Fatal("can't open", err.Error())
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("DELETE from todos WHERE id=$1;")
+	if err != nil {
+		log.Fatal("prepare error", err.Error())
+	}
+
+	if _, err := stmt.Exec(num); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{ "message": "Cannot Delete Data might because of SQL Prepareation"})
+	}
+
+	c.JSON(200, gin.H{"status": "success"})
 }
 
 func (t *Todo) UpdateStoreByID(c *gin.Context) {
@@ -61,6 +85,8 @@ func (t *Todo) UpdateStoreByID(c *gin.Context) {
 	if err != nil {
 		log.Fatal("fatal", err.Error())
 	}
+
+	defer db.Close()
 
 	stmt, err := db.Prepare("UPDATE todos SET status=$2 WHERE id=$1;")
 	if err != nil {
@@ -92,6 +118,8 @@ func (t *Todo) Insert(c *gin.Context) {
 		return
 	}
 
+	defer db.Close()
+
 	row := stmt.QueryRow(&t.Title, &t.Status)
 	err = row.Scan(&t.Id)
 	if err != nil {
@@ -111,6 +139,8 @@ func (t Todo) GetStoreByID(c *gin.Context) {
 		log.Fatal("Cannot connect Database")
 	}
 
+	defer db.Close()
+
 	stmt, _ := db.Prepare("SELECT id, title, status FROM todos where id=$1")
 	row := stmt.QueryRow(num)
 	err = row.Scan(&t.Id, &t.Title, &t.Status)
@@ -124,8 +154,17 @@ func (t Todo) GetStoreByID(c *gin.Context) {
 
 func (t Todo) GetStore(c *gin.Context) {
 	var todos []Todo
-	db, _ := sql.Open("postgres", hostName)
-	stmt, _ := db.Prepare("SELECT id, title, status FROM todos")
+	db, err := sql.Open("postgres", hostName)
+	if err != nil {
+		log.Fatal("Cannot connect Database")
+	}
+	defer db.Close()
+	stmt, err := db.Prepare("SELECT id, title, status FROM todos")
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{ "message": "There's Something Wrong on SQL Preparation"})
+		return
+	}
 
 	rows, _ := stmt.Query()
 	for rows.Next() {
