@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/zhangliangxiaohehanxin/todos/route"
-	"github.com/zhangliangxiaohehanxin/todos/database"
+	"github.com/zhangliangxiaohehanxin/todos/service/todos"
 	"fmt"
 )
 
@@ -12,7 +12,7 @@ const (
 )
 
 func main() {
-	todo := &db.Todo{}
+	todo := &service.Todo{}
 	r := handler.Route{ todo, hostName}.Init()
 	r.Run(fmt.Sprintf(":%s", port))
 }

@@ -20,16 +20,17 @@ type APIMethod interface {
 	DeleteStoreByID(c *gin.Context)
 }
 
-
-
 func (r Route) psqlPool() gin.HandlerFunc {
-	db, err := sql.Open("postgres", r.DBHost)
-	if err != nil {
-		log.Fatal("can't open", err.Error())
-	}
 
 	return func (c *gin.Context) {
-		c.Set("psql_session", db)
+		db, err := sql.Open("postgres", r.DBHost)
+		if err != nil {
+			log.Fatal("can't open", err.Error())
+		}
+
+		defer db.Close()
+
+		c.Set("session", db)
 		c.Next()
 	}
 }
