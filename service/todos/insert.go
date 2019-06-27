@@ -12,7 +12,7 @@ func (t *Todo) Insert(c *gin.Context) {
 	session, err := db.GetSession(c)
 	if err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Cannot Get Session DB"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Cannot Get Session DB"})
 		return
 	}
 
