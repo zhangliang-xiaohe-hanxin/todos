@@ -15,6 +15,7 @@ type APIMethod interface {
 	Insert(c *gin.Context) 
 	GetStore(c *gin.Context)
 	GetStoreByID(c *gin.Context)
+	UpdateStoreByID(c *gin.Context)
 }
 
 type Todo struct {
@@ -38,8 +39,40 @@ func main() {
 	api.GET("/todos", apiMethod.GetStore)
 	api.GET("/todos/:id", apiMethod.GetStoreByID)
 	api.POST("/todos", apiMethod.Insert)
+	api.PUT("/todos/:id", apiMethod.UpdateStoreByID)
 
 	r.Run(fmt.Sprintf(":%s", port))
+}
+
+func (t *Todo) UpdateStoreByID(c *gin.Context) {
+	param := c.Param("id")
+	num, err := strconv.Atoi(param)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{ "message": "Invalid ID format"})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&t); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{ "message": "Cannot recieve Data"})
+		return
+	}
+
+	db, err := sql.Open("postgres", hostName)
+	if err != nil {
+		log.Fatal("fatal", err.Error())
+	}
+
+	stmt, err := db.Prepare("UPDATE todos SET status=$2 WHERE id=$1;")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{ "message": "There's Something Wrong on SQL Preparation"})
+		return
+	}
+
+	stmt.QueryRow(num, t.Status)
+	t.Id = num
+
+	c.JSON(http.StatusOK, t)
+
 }
 
 func (t *Todo) Insert(c *gin.Context) {
@@ -59,8 +92,14 @@ func (t *Todo) Insert(c *gin.Context) {
 		return
 	}
 
-	stmt.QueryRow(&t.Title, &t.Status)
-	c.JSON(http.StatusOK, gin.H{ "message": "Insert Sucessfully"})
+	row := stmt.QueryRow(&t.Title, &t.Status)
+	err = row.Scan(&t.Id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{ "message": "Cannot fetch IDS"})
+		return
+	}
+
+	c.JSON(http.StatusOK, t)
 }
 
 
