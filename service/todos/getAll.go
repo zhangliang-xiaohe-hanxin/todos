@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/gin-gonic/gin"
+	"database/sql"
 	"github.com/zhangliangxiaohehanxin/todos/database"
 	"net/http"
 	"log"
@@ -9,7 +10,14 @@ import (
 
 func (t Todo) GetStore(c *gin.Context) {
 
-	todos, err := getAll(t, c)
+	session, err := db.GetSession(c)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Cannot Get Session DB"})
+		return
+	}
+
+	todos, err := getAll(t, session)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Cannot query"})
@@ -19,14 +27,9 @@ func (t Todo) GetStore(c *gin.Context) {
 	c.JSON(http.StatusOK, todos) 
 }
 
-func getAll(t Todo, c *gin.Context) ([]Todo, error) {
+func getAll(t Todo, session *sql.DB) ([]Todo, error) {
 
 	var todos []Todo
-
-	session, err := db.GetSession(c)
-	if err != nil {
-		return []Todo{}, err
-	}
 
 	stmt, err := session.Prepare("SELECT id, title, status FROM todos")
 
