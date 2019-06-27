@@ -19,6 +19,7 @@ func TestTodo(t *testing.T) {
 	t.Run("Update", TestUpdate)
 	t.Run("Delete", TestDelete)
 }
+
 func TestInsert(t *testing.T) {
 
 	session, err := sql.Open("postgres", hostName)
