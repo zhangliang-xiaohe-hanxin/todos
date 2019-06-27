@@ -14,7 +14,7 @@ func (t Todo) DeleteStoreByID(c *gin.Context) {
 	session, err := db.GetSession(c)
 	if err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Cannot Get Session DB"})
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Cannot Get Session DB"})
 		return
 	}
 
@@ -23,11 +23,11 @@ func (t Todo) DeleteStoreByID(c *gin.Context) {
 	err = delete(id, session)
 	if err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H { "message": "failed"})
+		c.JSON(http.StatusBadRequest, gin.H { "status": "failed"})
 		return
 	}
 
-	c.JSON(200, gin.H { "message": "success"})
+	c.JSON(200, gin.H { "status": "success"})
 }
 
 func delete(id string, session *sql.DB) error {

@@ -28,7 +28,7 @@ func (t *Todo) Insert(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, t)
+	c.JSON(201, t)
 }
 
 func insert(t *Todo, session *sql.DB) error {
