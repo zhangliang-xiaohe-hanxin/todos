@@ -44,13 +44,16 @@ func (t *Todo) UpdateStoreByID(c *gin.Context) {
 
 func updateByID(t *Todo, id int, session *sql.DB) error {
 
-	stmt, err := session.Prepare("UPDATE todos SET status=$2 WHERE id=$1;")
+	stmt, err := session.Prepare("UPDATE todos SET status=$2 WHERE id=$1 RETURNING ID;")
 	if err != nil {
 		return err
 	}
 
-	stmt.QueryRow(id, t.Status)
-	t.Id = id
+	row := stmt.QueryRow(id, t.Status)
+	err = row.Scan(&t.Id)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
